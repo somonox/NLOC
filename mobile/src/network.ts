@@ -8,6 +8,7 @@ import dgram from 'react-native-udp';
 
 export interface ConnectionInfo {
     ip: string;
+    local_ip?: string;
     port: number;
 }
 
@@ -29,7 +30,7 @@ export class NLOCClient {
     }
 
     async connect() {
-        const connectStr = `Punching UDP hole to ${this.info.ip}:${this.info.port}...`;
+        const connectStr = `Punching UDP hole to ${this.info.ip}:${this.info.port} (and ${this.info.local_ip || 'N/A'})...`;
         this.statusCallback(connectStr);
         console.log(connectStr);
 
@@ -65,7 +66,7 @@ export class NLOCClient {
                         ecdhPublicKey: Buffer.from(this.ecdhPair.publicKey).toString('hex')
                     };
                     const payload = JSON.stringify(response) + '\n';
-                    this.client.send(payload, undefined, undefined, this.info.port, this.info.ip);
+                    this.client.send(payload, undefined, undefined, rinfo.port, rinfo.address);
                 } else if (jsonMsg.type === 'authSuccess') {
                     this.statusCallback('Authentication Successful! Link Secure.');
                     this.authenticated = true;
@@ -90,10 +91,17 @@ export class NLOCClient {
         // STUN / Hole Punching Init
         const punchHole = () => {
             if (!challengeReceived) {
+                // Send to STUN Public IP
                 this.client.send('hello', undefined, undefined, this.info.port, this.info.ip, (err: any) => {
-                    if (err) console.error('UDP Punch Error:', err);
-                    else console.log('Sent UDP hole-punch packet');
+                    if (err) console.error('UDP Punch Error (Public):', err);
                 });
+
+                // Send to Local IP simultaneously (for same-wifi bypass)
+                if (this.info.local_ip) {
+                    this.client.send('hello', undefined, undefined, this.info.port, this.info.local_ip, (err: any) => {
+                        if (err) console.error('UDP Punch Error (Local):', err);
+                    });
+                }
             }
         };
 

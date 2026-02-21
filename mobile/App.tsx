@@ -35,7 +35,7 @@ export default function App() {
         try {
             const info = JSON.parse(data);
             if (info.ipAddress && info.port) {
-                startConnection({ ip: info.ipAddress, port: info.port });
+                startConnection({ ip: info.ipAddress, local_ip: info.localIp, port: info.port });
             } else {
                 Alert.alert('오류', '올바른 NLOC QR 코드가 아닙니다.');
             }
@@ -44,7 +44,7 @@ export default function App() {
         }
     };
 
-    const startConnection = (info: { ip: string, port: number }) => {
+    const startConnection = (info: { ip: string, local_ip?: string, port: number }) => {
         if (client) client.disconnect();
 
         const newClient = new NLOCClient(

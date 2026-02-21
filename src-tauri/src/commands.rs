@@ -246,6 +246,7 @@ pub struct HostPublicAddress(pub Mutex<Option<(String, u16)>>);
 pub struct HostInfo {
     pub public_key: String,
     pub ip_address: String,
+    pub local_ip: String,
     pub port: u16,
     pub session_token: String,
 }
@@ -259,9 +260,15 @@ pub async fn get_host_info(state: State<'_, HostPublicAddress>) -> Result<HostIn
         None => return Err("Host public address not yet resolved via STUN".into()),
     };
 
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip.to_string(),
+        Err(_) => "127.0.0.1".to_string(),
+    };
+
     Ok(HostInfo {
         public_key: pub_key,
         ip_address: target_ip,
+        local_ip,
         port: target_port,
         session_token: "temp_token123".to_string(), // TODO: 실제 임시 토큰 생성 로직
     })

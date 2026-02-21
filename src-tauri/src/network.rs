@@ -152,6 +152,8 @@ pub async fn run_udp_server(app_handle: tauri::AppHandle) {
                 match result {
                     Ok((len, src)) => {
                         let text = String::from_utf8_lossy(&buf[..len]).trim().to_string();
+                        info!("(DEBUG) Received UDP packet from {}: len={}, content='{}'", src, len, text);
+
                         if !text.is_empty() {
                             if !authenticated {
                                 if text == "hello" && mobile_addr.is_none() {

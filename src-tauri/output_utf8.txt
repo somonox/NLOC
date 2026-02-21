@@ -1,0 +1,313 @@
+﻿cargo :     Checking ap
+p v0.1.0 (C:\Users\a6a6
+\NLOC\src-tauri)
+위치 줄:1 문자:1
++ cargo check > output.
+txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (    Checking    
+ ap...NLOC\src-taur    
+i):String) [], Rem    o
+teException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+warning: unused import:
+ `std::fs`
+ --> src\commands.rs:2:
+5
+  |
+2 | use std::fs;
+  |     ^^^^^^^
+  |
+  = note: `#[warn(unuse
+d_imports)]` on by defa
+ult
+
+error[E0107]: function 
+takes 1 generic argumen
+t but 3 generic argumen
+ts were supplied
+   --> src\crypto\mod.r
+s:9:26
+    |
+9   |     let shares = 
+shamir::split_secret::<
+u8, u8, Vec<u8>>(2, 3, 
+secret.as_bytes(), &mut
+ rng)
+    |                  
+        ^^^^^^^^^^^^   
+  ------------- help: r
+emove the unnecessary g
+eneric arguments
+    |                  
+        |
+    |                  
+        expected 1 gene
+ric argument
+    |
+note: function defined 
+here, with 1 generic pa
+rameter: `S`
+   --> C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\vsss-rs-5.2.0\src\
+shamir.rs:120:8
+    |
+120 | pub fn split_secr
+et<S: Share>(
+    |        ^^^^^^^^^^
+^^ -
+
+error[E0277]: the trait
+ bound `ThreadRng: vsss
+_rs::elliptic_curve::ra
+nd_core::RngCore` is no
+t satisfied
+   --> src\crypto\mod.r
+s:9:45
+    |
+9   |     let shares = 
+shamir::split_secret::<
+u8, u8, Vec<u8>>(2, 3, 
+secret.as_bytes(), &mut
+ rng)
+    |                  
+                       
+    ^^ the trait `vsss_
+rs::elliptic_curve::ran
+d_core::RngCore` is not
+ implemented for `Threa
+dRng`
+    |
+note: there are multipl
+e different versions of
+ crate `rand_core` in t
+he dependency graph
+   --> C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand_core-0.6.4\sr
+c\lib.rs:142:1
+    |
+142 | pub trait RngCore
+ {
+    | ^^^^^^^^^^^^^^^^^
+ this is the required t
+rait
+    |
+   ::: src\crypto\mod.r
+s:1:5
+    |
+1   | use rand::rng;
+    |     ---- one vers
+ion of crate `rand_core
+` used here, as a depen
+dency of crate `rand`
+2   | use vsss_rs::sham
+ir;
+    |     ------- one v
+ersion of crate `rand_c
+ore` used here, as a de
+pendency of crate `rand
+`
+    |
+   ::: C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand-0.9.2\src\rng
+s\thread.rs:94:1
+    |
+94  | pub struct Thread
+Rng {
+    | -----------------
+--- this type doesn't i
+mplement the required t
+rait
+    |
+   ::: C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand_core-0.9.5\sr
+c\block.rs:67:1
+    |
+67  | pub trait BlockRn
+gCore {
+    | -----------------
+----- this is the found
+ trait
+    = help: you can use
+ `cargo tree` to explor
+e your dependency tree
+    = note: required fo
+r `&mut ThreadRng` to i
+mplement `vsss_rs::elli
+ptic_curve::rand_core::
+RngCore`
+note: required by a bou
+nd in `vsss_rs::shamir:
+:split_secret`
+   --> C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\vsss-rs-5.2.0\src\
+shamir.rs:124:15
+    |
+120 | pub fn split_secr
+et<S: Share>(
+    |        ----------
+-- required by a bound 
+in this function
+...
+124 |     rng: impl Rng
+Core + CryptoRng,
+    |               ^^^
+^^^^ required by this b
+ound in `split_secret`
+
+error[E0277]: the trait
+ bound `ThreadRng: vsss
+_rs::elliptic_curve::ra
+nd_core::CryptoRng` is 
+not satisfied
+   --> src\crypto\mod.r
+s:9:45
+    |
+9   |     let shares = 
+shamir::split_secret::<
+u8, u8, Vec<u8>>(2, 3, 
+secret.as_bytes(), &mut
+ rng)
+    |                  
+                       
+    ^^ the trait `vsss_
+rs::elliptic_curve::ran
+d_core::CryptoRng` is n
+ot implemented for `Thr
+eadRng`
+    |
+note: there are multipl
+e different versions of
+ crate `rand_core` in t
+he dependency graph
+   --> C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand_core-0.6.4\sr
+c\lib.rs:209:1
+    |
+209 | pub trait CryptoR
+ng {}
+    | ^^^^^^^^^^^^^^^^^
+^^ this is the required
+ trait
+    |
+   ::: src\crypto\mod.r
+s:1:5
+    |
+1   | use rand::rng;
+    |     ---- one vers
+ion of crate `rand_core
+` used here, as a depen
+dency of crate `rand`
+2   | use vsss_rs::sham
+ir;
+    |     ------- one v
+ersion of crate `rand_c
+ore` used here, as a de
+pendency of crate `rand
+`
+    |
+   ::: C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand-0.9.2\src\rng
+s\thread.rs:94:1
+    |
+94  | pub struct Thread
+Rng {
+    | -----------------
+--- this type doesn't i
+mplement the required t
+rait
+    |
+   ::: C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\rand_core-0.9.5\sr
+c\block.rs:67:1
+    |
+67  | pub trait BlockRn
+gCore {
+    | -----------------
+----- this is the found
+ trait
+    = help: you can use
+ `cargo tree` to explor
+e your dependency tree
+    = note: required fo
+r `&mut ThreadRng` to i
+mplement `vsss_rs::elli
+ptic_curve::rand_core::
+CryptoRng`
+note: required by a bou
+nd in `vsss_rs::shamir:
+:split_secret`
+   --> C:\Users\a6a6\.c
+argo\registry\src\index
+.crates.io-1949cf8c6b5b
+557f\vsss-rs-5.2.0\src\
+shamir.rs:124:25
+    |
+120 | pub fn split_secr
+et<S: Share>(
+    |        ----------
+-- required by a bound 
+in this function
+...
+124 |     rng: impl Rng
+Core + CryptoRng,
+    |                  
+       ^^^^^^^^^ requir
+ed by this bound in `sp
+lit_secret`
+
+error[E0433]: failed to
+ resolve: use of unreso
+lved module or unlinked
+ crate `hex`
+  --> src\crypto\mod.rs
+:12:26
+   |
+12 |     Ok(shares.iter
+().map(hex::encode).col
+lect())
+   |                   
+       ^^^ use of unres
+olved module or unlinke
+d crate `hex`
+   |
+   = help: if you wante
+d to use a crate named 
+`hex`, use `cargo add h
+ex` to add it to your `
+Cargo.toml`
+
+Some errors have detail
+ed explanations: E0107,
+ E0277, E0433.
+For more information ab
+out an error, try `rust
+c --explain E0107`.
+warning: `app` (lib) ge
+nerated 1 warning
+error: could not compil
+e `app` (lib) due to 4 
+previous errors; 1 warn
+ing emitted

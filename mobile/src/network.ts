@@ -42,8 +42,9 @@ export class NLOCClient {
         let challengeReceived = false;
 
         this.client.on('message', async (msg: any, rinfo: any) => {
-            // Only accept packets from the expected host IP and Port
-            if (rinfo.address !== this.info.ip || rinfo.port !== this.info.port) return;
+            // We loosen the strict IP check because NAT reflection or local network might
+            // show a different source IP/port than the STUN public IP/port.
+            // console.log(`Received packet from ${rinfo.address}:${rinfo.port}`);
 
             const text = msg.toString('utf-8').trim();
             if (!text) return;
@@ -76,7 +77,8 @@ export class NLOCClient {
                     await this.handleSecureMessage(jsonMsg);
                 }
             } catch (err) {
-                console.error('UDP Message Parse Error:', err);
+                // If it's not JSON, it could be a raw keep-alive or malformed data, ignore it instead of crashing.
+                console.log('Non-JSON UDP Message Received:', text);
             }
         });
 
@@ -88,7 +90,7 @@ export class NLOCClient {
         // STUN / Hole Punching Init
         const punchHole = () => {
             if (!challengeReceived) {
-                this.client.send('hello\n', undefined, undefined, this.info.port, this.info.ip, (err: any) => {
+                this.client.send('hello', undefined, undefined, this.info.port, this.info.ip, (err: any) => {
                     if (err) console.error('UDP Punch Error:', err);
                     else console.log('Sent UDP hole-punch packet');
                 });

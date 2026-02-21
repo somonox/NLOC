@@ -91,14 +91,16 @@ export class NLOCClient {
         // STUN / Hole Punching Init
         const punchHole = () => {
             if (!challengeReceived) {
+                const helloBuf = Buffer.from('hello');
                 // Send to STUN Public IP
-                this.client.send('hello', undefined, undefined, this.info.port, this.info.ip, (err: any) => {
+                this.client.send(helloBuf, undefined, undefined, this.info.port, this.info.ip, (err: any) => {
                     if (err) console.error('UDP Punch Error (Public):', err);
                 });
 
                 // Send to Local IP simultaneously (for same-wifi bypass)
                 if (this.info.local_ip) {
-                    this.client.send('hello', undefined, undefined, this.info.port, this.info.local_ip, (err: any) => {
+                    console.log(`Sending Punch to Local IP: ${this.info.local_ip}:${this.info.port}`);
+                    this.client.send(helloBuf, undefined, undefined, this.info.port, this.info.local_ip, (err: any) => {
                         if (err) console.error('UDP Punch Error (Local):', err);
                     });
                 }

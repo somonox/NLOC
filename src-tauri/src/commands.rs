@@ -239,6 +239,8 @@ pub async fn get_trusted_nodes(app: tauri::AppHandle) -> Result<Vec<TrustedNode>
     Ok(nodes)
 }
 
+pub struct HostPublicAddress(pub Mutex<Option<(String, u16)>>);
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct HostInfo {
@@ -249,22 +251,18 @@ pub struct HostInfo {
 }
 
 #[tauri::command]
-pub async fn get_host_info(_app: tauri::AppHandle) -> Result<HostInfo, String> {
+pub async fn get_host_info(state: State<'_, HostPublicAddress>) -> Result<HostInfo, String> {
     let pub_key = crypto::get_host_public_key_hex()?;
 
-    // Generate unique DDNS subdomain using SHA256 of the public key
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(pub_key.as_bytes());
-    let hash_result = hasher.finalize();
-    let hash_hex = hex::encode(hash_result);
-    // Take first 12 characters for a reasonable subdomain length
-    let target_address = format!("nloc-{}.duckdns.org", &hash_hex[..12]);
+    let (target_ip, target_port) = match *state.0.lock().unwrap() {
+        Some((ref ip, port)) => (ip.clone(), port),
+        None => return Err("Host public address not yet resolved via STUN".into()),
+    };
 
     Ok(HostInfo {
         public_key: pub_key,
-        ip_address: target_address,
-        port: 5000,
+        ip_address: target_ip,
+        port: target_port,
         session_token: "temp_token123".to_string(), // TODO: 실제 임시 토큰 생성 로직
     })
 }

@@ -1,8 +1,10 @@
 import { Buffer } from 'buffer';
+// @ts-ignore
 import { gcm } from '@noble/ciphers/aes';
 import * as crypto from './crypto';
 
-import TcpSocket from 'react-native-tcp-socket';
+// @ts-ignore
+import dgram from 'react-native-udp';
 
 export interface ConnectionInfo {
     ip: string;
@@ -27,72 +29,85 @@ export class NLOCClient {
     }
 
     async connect() {
-        const connectStr = `Connecting via TCP to ${this.info.ip}:${this.info.port}...`;
+        const connectStr = `Punching UDP hole to ${this.info.ip}:${this.info.port}...`;
         this.statusCallback(connectStr);
         console.log(connectStr);
 
         const identityPriv = await crypto.getOrCreateIdentity();
         const identityPub = await crypto.getPublicKey(identityPriv);
 
-        const options = {
-            port: this.info.port,
-            host: this.info.ip,
-        };
+        this.client = dgram.createSocket({ type: 'udp4' });
+        this.client.bind(); // Bind to ephemeral local port for P2P punching
 
-        this.client = TcpSocket.createConnection(options, () => {
-            this.statusCallback('TCP connected! Waiting for challenge...');
-            console.log('TCP Socket explicitly opened.');
-        });
+        let challengeReceived = false;
 
-        let buffer = '';
+        this.client.on('message', async (msg: any, rinfo: any) => {
+            // Only accept packets from the expected host IP and Port
+            if (rinfo.address !== this.info.ip || rinfo.port !== this.info.port) return;
 
-        this.client.on('data', async (data: any) => {
-            buffer += data.toString('utf-8');
-            let lines = buffer.split('\n');
-            buffer = lines.pop() || '';
+            const text = msg.toString('utf-8').trim();
+            if (!text) return;
 
-            for (const line of lines) {
-                if (!line.trim()) continue;
-                try {
-                    const msg = JSON.parse(line);
-                    console.log('Received Message Type:', msg.type);
-                    if (msg.type === 'challenge' && !this.authenticated) {
-                        this.statusCallback('Challenge received. Authenticating...');
-                        const signature = await crypto.signChallenge(identityPriv, msg.nonce);
+            try {
+                const jsonMsg = JSON.parse(text);
+                console.log('Received UDP Message Type:', jsonMsg.type);
 
-                        const response = {
-                            type: 'challengeResponse',
-                            signature: Buffer.from(signature).toString('hex'),
-                            publicKey: Buffer.from(identityPub).toString('hex'),
-                            ecdhPublicKey: Buffer.from(this.ecdhPair.publicKey).toString('hex')
-                        };
-                        this.client?.write(JSON.stringify(response) + '\n');
-                    } else if (msg.type === 'authSuccess') {
-                        this.statusCallback('Authentication Successful!');
-                        this.authenticated = true;
-                        this.sessionKey = crypto.deriveSharedSecret(this.ecdhPair.privateKey, msg.ecdhPublicKey);
-                        console.log('Mobile derived TCP session key');
-                    } else if (msg.type === 'authFailed') {
-                        this.statusCallback(`Auth Failed: ${msg.reason}`);
-                    } else if (msg.type === 'encryptedPayload') {
-                        await this.handleSecureMessage(msg);
-                    }
-                } catch (err) {
-                    console.error('TCP Message Error:', err);
+                if (jsonMsg.type === 'challenge' && !this.authenticated) {
+                    challengeReceived = true;
+                    this.statusCallback('Challenge received. Authenticating...');
+                    const signature = await crypto.signChallenge(identityPriv, jsonMsg.nonce);
+
+                    const response = {
+                        type: 'challengeResponse',
+                        signature: Buffer.from(signature).toString('hex'),
+                        publicKey: Buffer.from(identityPub).toString('hex'),
+                        ecdhPublicKey: Buffer.from(this.ecdhPair.publicKey).toString('hex')
+                    };
+                    const payload = JSON.stringify(response) + '\n';
+                    this.client.send(payload, undefined, undefined, this.info.port, this.info.ip);
+                } else if (jsonMsg.type === 'authSuccess') {
+                    this.statusCallback('Authentication Successful! Link Secure.');
+                    this.authenticated = true;
+                    this.sessionKey = crypto.deriveSharedSecret(this.ecdhPair.privateKey, jsonMsg.ecdhPublicKey);
+                    console.log('Mobile derived UDP session key');
+                } else if (jsonMsg.type === 'authFailed') {
+                    this.statusCallback(`Auth Failed: ${jsonMsg.reason}`);
+                } else if (jsonMsg.type === 'encryptedPayload') {
+                    await this.handleSecureMessage(jsonMsg);
                 }
+            } catch (err) {
+                console.error('UDP Message Parse Error:', err);
             }
         });
 
         this.client.on('error', (e: any) => {
-            console.error('TCP Error:', e);
+            console.error('UDP Error:', e);
             this.statusCallback(`Connection Error: ${e.message}`);
         });
 
-        this.client.on('close', () => {
-            this.statusCallback('Connection closed');
-            console.log('TCP Socket closed.');
-            this.authenticated = false;
-        });
+        // STUN / Hole Punching Init
+        const punchHole = () => {
+            if (!challengeReceived) {
+                this.client.send('hello\n', undefined, undefined, this.info.port, this.info.ip, (err: any) => {
+                    if (err) console.error('UDP Punch Error:', err);
+                    else console.log('Sent UDP hole-punch packet');
+                });
+            }
+        };
+
+        punchHole();
+        let attempts = 0;
+        const interval = setInterval(() => {
+            if (challengeReceived || attempts >= 10) {
+                clearInterval(interval);
+                if (!challengeReceived) {
+                    this.statusCallback('Failed to punch UDP hole (Timeout).');
+                }
+            } else {
+                punchHole();
+                attempts++;
+            }
+        }, 1000);
     }
 
     private async handleSecureMessage(msg: any) {
@@ -119,6 +134,6 @@ export class NLOCClient {
     }
 
     disconnect() {
-        if (this.ws) this.ws.close();
+        if (this.client) this.client.close();
     }
 }

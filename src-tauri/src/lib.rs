@@ -17,13 +17,14 @@ pub fn run() {
 
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                network::run_tcp_server(handle).await;
+                network::run_udp_server(handle).await;
             });
 
             Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .manage(commands::HostPublicAddress(std::sync::Mutex::new(None)))
         .manage(commands::PendingShardState(std::sync::Mutex::new(
             Vec::new(),
         )))
